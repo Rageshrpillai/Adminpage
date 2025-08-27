@@ -29,7 +29,8 @@ return [
         'http://localhost:5173',    // React dev server (HTTP)
         'https://localhost:5173',   // React dev server (HTTPS)
         'http://127.0.0.1:5173',   // Alternative localhost
-        'https://127.0.0.1:5173',  // Alternative localhost HTTPS
+        'https://127.0.0.1:5173',
+        'https://admindashboard.test',   // Alternative localhost HTTPS
     ],
 
     'allowed_origins_patterns' => [],

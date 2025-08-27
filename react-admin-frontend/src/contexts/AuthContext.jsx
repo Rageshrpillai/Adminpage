@@ -53,16 +53,25 @@ export const AuthProvider = ({ children }) => {
   // Register function
   const register = async (userData) => {
     try {
+      console.log("🚀 Registration starting...");
+      console.log("🎯 Target URL:", import.meta.env.VITE_API_BASE_URL);
+
       setError(null);
-      await apiService.register(userData);
+      const result = await apiService.register(userData);
+
+      console.log("✅ Registration successful:", result);
       await checkAuth();
       return { success: true };
     } catch (error) {
+      console.error("❌ Registration failed:", error);
+      console.error("📋 Full error:", error.response?.data);
+
       const errorMessage =
         error.response?.data?.message || "Registration failed";
       const errors = error.response?.data?.errors || {
         general: [errorMessage],
       };
+
       setError(errorMessage);
       return { success: false, errors };
     }

@@ -18,6 +18,8 @@ return Application::configure(basePath: dirname(__DIR__))
         // 🔹 Apply global CORS middleware (reads settings from config/cors.php)
         $middleware->append(HandleCors::class);
 
+        $middleware->trustProxies(at: '*'); // <-- Add this line
+
         // 🔹 Sanctum middleware for SPA authentication with cookies
         $middleware->api(prepend: [
             EnsureFrontendRequestsAreStateful::class,

@@ -1,142 +1,81 @@
-// API Service for Laravel Backend Communication
-class ApiService {
-  constructor() {
-    this.baseURL =
-      import.meta.env.VITE_API_BASE_URL || "https://admindashboard.test";
-    this.defaultHeaders = {
-      Accept: "application/json",
-      "Content-Type": "application/json",
-    };
+import axios from "axios";
+
+// Create an Axios instance with default settings
+const api = axios.create({
+  baseURL: import.meta.env.VITE_API_BASE_URL || "https://admindashboard.test",
+  withCredentials: true, // CRITICAL: This sends cookies with every request
+  headers: {
+    Accept: "application/json",
+    "X-Requested-With": "XMLHttpRequest",
+  },
+});
+
+// Function to get the CSRF cookie from the backend
+const initializeCSRF = async () => {
+  console.log("🔄 Fetching CSRF token...");
+  try {
+    await api.get("/sanctum/csrf-cookie");
+    console.log("✅ CSRF token fetched successfully");
+  } catch (error) {
+    console.error("❌ CSRF initialization failed:", error);
+    // Optionally handle the error, e.g., show a notification
   }
+};
 
-  // Generic HTTP request method
-  async request(endpoint, options = {}) {
-    const url = `${this.baseURL}${endpoint}`;
-
-    const config = {
-      credentials: "include", // Important for Sanctum cookies
-      headers: {
-        ...this.defaultHeaders,
-        ...options.headers,
-      },
-      ...options,
-    };
-
-    // Convert body to JSON string if it's an object
-    if (config.body && typeof config.body === "object") {
-      config.body = JSON.stringify(config.body);
-    }
-
-    try {
-      const response = await fetch(url, config);
-
-      // Handle non-JSON responses
-      const contentType = response.headers.get("content-type");
-      let data = {};
-
-      if (contentType && contentType.includes("application/json")) {
-        data = await response.json();
-      }
-
-      if (!response.ok) {
-        throw {
-          status: response.status,
-          statusText: response.statusText,
-          response: { data },
-        };
-      }
-
-      return data;
-    } catch (error) {
-      // Network or parsing errors
-      if (error.response) {
-        throw error;
-      }
-      throw {
-        status: 0,
-        statusText: "Network Error",
-        response: {
-          data: { errors: { general: ["Network connection failed"] } },
-        },
-      };
-    }
-  }
-
-  // HTTP Methods
-  async get(endpoint, params = {}) {
-    const query = new URLSearchParams(params).toString();
-    const url = query ? `${endpoint}?${query}` : endpoint;
-    return this.request(url, { method: "GET" });
-  }
-
-  async post(endpoint, data = {}) {
-    return this.request(endpoint, {
-      method: "POST",
-      body: data,
-    });
-  }
-
-  async put(endpoint, data = {}) {
-    return this.request(endpoint, {
-      method: "PUT",
-      body: data,
-    });
-  }
-
-  async delete(endpoint) {
-    return this.request(endpoint, { method: "DELETE" });
-  }
-
+const apiService = {
   // Authentication Methods
-  async initializeCSRF() {
-    try {
-      await fetch(`${this.baseURL}/sanctum/csrf-cookie`, {
-        credentials: "include",
-      });
-    } catch (error) {
-      console.error("CSRF initialization failed:", error);
-      throw error;
-    }
-  }
+  login: async (credentials) => {
+    await initializeCSRF();
+    return api.post("/login", credentials);
+  },
 
-  async login(credentials) {
-    await this.initializeCSRF();
-    return this.post("/login", credentials);
-  }
+  register: async (userData) => {
+    await initializeCSRF();
+    return api.post("/register", userData);
+  },
 
-  async register(userData) {
-    await this.initializeCSRF();
-    return this.post("/register", userData);
-  }
+  logout: async () => {
+    return api.post("/logout");
+  },
 
-  async logout() {
-    return this.post("/logout");
-  }
+  getCurrentUser: async () => {
+    return api.get("/api/user");
+  },
 
-  async getCurrentUser() {
-    return this.get("/api/user");
-  }
+  forgotPassword: async (email) => {
+    await initializeCSRF();
+    return api.post("/forgot-password", { email });
+  },
 
-  async forgotPassword(email) {
-    await this.initializeCSRF();
-    return this.post("/forgot-password", { email });
-  }
+  resetPassword: async (data) => {
+    await initializeCSRF();
+    return api.post("/reset-password", data);
+  },
 
-  async resetPassword(data) {
-    await this.initializeCSRF();
-    return this.post("/reset-password", data);
-  }
+  // Generic Data Methods
+  get: (endpoint, params = {}) => {
+    return api.get(endpoint, { params });
+  },
 
-  // Additional API methods can be added here
-  async updateProfile(userData) {
-    return this.put("/api/user/profile", userData);
-  }
+  post: (endpoint, data = {}) => {
+    return api.post(endpoint, data);
+  },
 
-  async changePassword(passwordData) {
-    return this.put("/api/user/password", passwordData);
-  }
-}
+  put: (endpoint, data = {}) => {
+    return api.put(endpoint, data);
+  },
 
-// Create and export singleton instance
-const apiService = new ApiService();
+  delete: (endpoint) => {
+    return api.delete(endpoint);
+  },
+
+  updateProfile: (userData) => {
+    return api.put("/api/user/profile", userData);
+  },
+
+  changePassword: (passwordData) => {
+    return api.put("/api/user/password", passwordData);
+  },
+};
+
 export default apiService;
